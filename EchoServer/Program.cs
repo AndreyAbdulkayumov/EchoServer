@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.Design;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -10,6 +11,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using EchoServer.Protocols;
 
 namespace EchoServer
 {
@@ -17,7 +19,7 @@ namespace EchoServer
     {
 
     }
-
+    
     internal class Program
     {
         private const string ServerIP = "127.168.0.3";
@@ -30,6 +32,8 @@ namespace EchoServer
         private static TcpClient Client = null;
         private static NetworkStream ClientStream = null;
 
+        private static Protocol SelectedProtocol = null;
+
         static void Main(string[] args)
         {
             try
@@ -38,14 +42,18 @@ namespace EchoServer
 
                 Server = new TcpListener(IP_Point);
 
+                SelectProtocol();
+
                 Server.Start();
 
                 Console.WriteLine(
                     "Сервер запущен\n\n" +
                     "IP address: " + ServerIP + "\n" +
                     "Port: " + Convert.ToString(ServerPort) + "\n" +
-                    "Кодировка: " + ServerEncoding.EncodingName + "\n"
+                    "Кодировка: " + ServerEncoding.EncodingName + "\n" +
+                    "Протокол: " + SelectedProtocol.ProtocolName + "\n"
                     );
+                              
 
                 while (true)
                 {
@@ -98,6 +106,8 @@ namespace EchoServer
 
                 ClientStream = Client.GetStream();
 
+                SelectedProtocol.Init(ClientStream, ServerEncoding);
+
                 Console.WriteLine(
                     "Клиент подключен\n" + 
                     "IP address: " + 
@@ -110,46 +120,45 @@ namespace EchoServer
             }
         }
 
-        private static void EchoAction()
+        private static void SelectProtocol()
         {
-            byte[] ReceivedData = new byte[256];
-            int NumberOfReceivedBytes;
+            Console.WriteLine(
+                "Выберите протокол взаимодействия:\n" +
+                "0 - Без протокола\n" +
+                "1 - Modbus TCP\n"
+                );
 
-            StringBuilder MessageBuilder = new StringBuilder();
-
-            string MessageFromClient;
+            ConsoleKeyInfo PressedKey;
 
             while (true)
             {
-                do
-                {
-                    NumberOfReceivedBytes = ClientStream.Read(ReceivedData, 0, ReceivedData.Length);
-                    MessageBuilder.Append(ServerEncoding.GetString(ReceivedData, 0, NumberOfReceivedBytes));
-                }
-                while (ClientStream.DataAvailable);
+                PressedKey = Console.ReadKey();
 
-                MessageFromClient = MessageBuilder.ToString();
-
-                if (MessageFromClient == String.Empty)
+                if (PressedKey.Key == ConsoleKey.D0 || PressedKey.Key == ConsoleKey.NumPad0)
                 {
-                    throw new ClientDisconnectException();
+                    SelectedProtocol = new NoProtocol();
+                    Console.WriteLine("\n");
+                    break;
                 }
 
-                else
+                else if (PressedKey.Key == ConsoleKey.D1 || PressedKey.Key == ConsoleKey.NumPad1)
                 {
-                    Console.WriteLine(MessageFromClient);
-
-                    byte[] MessageToClient = ServerEncoding.GetBytes(MessageBuilder.ToString());
-
-                    ClientStream.Write(MessageToClient, 0, MessageToClient.Length);
-
-                    for(int i = 0; i < NumberOfReceivedBytes; i++)
-                    {
-                        ReceivedData[i] = 0;
-                    }
-                    
-                    MessageBuilder.Clear();
+                    SelectedProtocol = new Modbus();
+                    Console.WriteLine("\n");
+                    break;
                 }
+
+                Console.WriteLine("\nВыбран неизвестный протокол взаимодействия. Введите номер протокола заново.");
+            }
+        }
+
+        private static void EchoAction()
+        {
+            while (true)
+            {
+                SelectedProtocol.ReceiveData();
+
+                SelectedProtocol.SendAnswer();                
             }
         }
     }
