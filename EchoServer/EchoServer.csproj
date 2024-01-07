@@ -45,6 +45,8 @@
   <ItemGroup>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Protocols\CycleTransmit.cs" />
+    <Compile Include="Protocols\IEcho.cs" />
     <Compile Include="Protocols\Modbus.cs" />
     <Compile Include="Protocols\NoProtocol.cs" />
     <Compile Include="Protocols\Protocol.cs" />

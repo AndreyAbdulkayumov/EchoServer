@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -34,7 +35,9 @@ namespace EchoServer
 
         private static Protocol SelectedProtocol = null;
 
-        static void Main(string[] args)
+        private static int TransmitInterval_ms = 100;
+
+        static async Task Main(string[] args)
         {
             try
             {
@@ -61,7 +64,15 @@ namespace EchoServer
                     {
                         WaitConnect();
 
-                        EchoAction();
+                        if (SelectedProtocol is IEcho)
+                        {
+                            EchoAction();
+                        }
+                        
+                        else
+                        {
+                            await CycleTransmitAction();
+                        }
                     }
 
                     catch (ClientDisconnectException)
@@ -125,7 +136,8 @@ namespace EchoServer
             Console.WriteLine(
                 "Выберите протокол взаимодействия:\n" +
                 "0 - Без протокола\n" +
-                "1 - Modbus TCP\n"
+                "1 - Modbus TCP\n" +
+                "2 - Цикличная передача\n"
                 );
 
             ConsoleKeyInfo PressedKey;
@@ -148,6 +160,36 @@ namespace EchoServer
                     break;
                 }
 
+                else if (PressedKey.Key == ConsoleKey.D2 || PressedKey.Key == ConsoleKey.NumPad2)
+                {
+                    SelectedProtocol = new CycleTransmit();
+                    Console.WriteLine("\n");
+
+                    Console.WriteLine("Введите интервал передачи в мс.");
+
+                ENTER_NUMBER:
+
+                    string Number = Console.ReadLine();
+
+                    if (Int32.TryParse(Number, out TransmitInterval_ms) == false)
+                    {
+                        Console.WriteLine("Введен неправильный формат числа.");
+
+                        goto ENTER_NUMBER;
+                    }
+
+                    if (TransmitInterval_ms <= 0)
+                    {
+                        Console.WriteLine("Можно вводить только числа больше нуля.");
+
+                        goto ENTER_NUMBER;
+                    }
+
+                    Console.WriteLine("\n");
+
+                    break;
+                }
+
                 Console.WriteLine("\nВыбран неизвестный протокол взаимодействия. Введите номер протокола заново.");
             }
         }
@@ -159,6 +201,16 @@ namespace EchoServer
                 SelectedProtocol.ReceiveData();
 
                 SelectedProtocol.SendAnswer();                
+            }
+        }
+
+        private static async Task CycleTransmitAction()
+        {
+            while (true)
+            {
+                SelectedProtocol.SendAnswer();
+
+                await Task.Delay(TransmitInterval_ms);
             }
         }
     }

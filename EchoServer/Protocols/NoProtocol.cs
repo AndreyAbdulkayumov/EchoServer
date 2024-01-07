@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EchoServer.Protocols
 {
-    internal class NoProtocol : Protocol
+    internal class NoProtocol : Protocol, IEcho
     {
         private StringBuilder MessageBuilder = new StringBuilder();
 

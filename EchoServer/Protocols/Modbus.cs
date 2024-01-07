@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EchoServer.Protocols
 {
-    internal class Modbus : Protocol
+    internal class Modbus : Protocol, IEcho
     {
         public enum MessageType
         {
