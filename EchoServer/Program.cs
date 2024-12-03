@@ -1,16 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.Design;
-using System.Globalization;
-using System.IO;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
-using System.Reflection;
-using System.Runtime.InteropServices.ComTypes;
-using System.Security.Cryptography;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using EchoServer.Protocols;
 
@@ -77,18 +68,18 @@ namespace EchoServer
 
                     catch (ClientDisconnectException)
                     {
-                        ClientStream?.Close();
-                        Client?.Close();
-
                         Console.WriteLine("Клиент отлючился\n");
                     }
 
                     catch (Exception error)
                     {
+                        Console.WriteLine("Возникла ошибка:\n" + error.Message + "\nКлиент был отключен.\n");
+                    }
+
+                    finally
+                    {
                         ClientStream?.Close();
                         Client?.Close();
-
-                        Console.WriteLine("Возникла ошибка:\n" + error.Message + "\nКлиент был отключен.\n");
                     }
                 }
             }
@@ -135,9 +126,10 @@ namespace EchoServer
         {
             Console.WriteLine(
                 "Выберите протокол взаимодействия:\n" +
-                "0 - Без протокола\n" +
-                "1 - Modbus TCP\n" +
-                "2 - Цикличная передача\n"
+                "0 - Без протокола (отображается строка)\n" +
+                "1 - Без протокола (отображаются байты)\n" +
+                "2 - Modbus TCP\n" +
+                "3 - Цикличная передача\n"
                 );
 
             ConsoleKeyInfo PressedKey;
@@ -148,19 +140,26 @@ namespace EchoServer
 
                 if (PressedKey.Key == ConsoleKey.D0 || PressedKey.Key == ConsoleKey.NumPad0)
                 {
-                    SelectedProtocol = new NoProtocol();
+                    SelectedProtocol = new NoProtocol(false);
                     Console.WriteLine("\n");
                     break;
                 }
 
                 else if (PressedKey.Key == ConsoleKey.D1 || PressedKey.Key == ConsoleKey.NumPad1)
                 {
-                    SelectedProtocol = new Modbus();
+                    SelectedProtocol = new NoProtocol(true);
                     Console.WriteLine("\n");
                     break;
                 }
 
                 else if (PressedKey.Key == ConsoleKey.D2 || PressedKey.Key == ConsoleKey.NumPad2)
+                {
+                    SelectedProtocol = new Modbus();
+                    Console.WriteLine("\n");
+                    break;
+                }
+
+                else if (PressedKey.Key == ConsoleKey.D3 || PressedKey.Key == ConsoleKey.NumPad3)
                 {
                     SelectedProtocol = new CycleTransmit();
                     Console.WriteLine("\n");

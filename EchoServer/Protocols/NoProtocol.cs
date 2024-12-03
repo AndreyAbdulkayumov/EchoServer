@@ -3,19 +3,28 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace EchoServer.Protocols
 {
     internal class NoProtocol : Protocol, IEcho
     {
-        private StringBuilder MessageBuilder = new StringBuilder();
+        private readonly bool _isByteView;
 
-        private string MessageFromClient;
+        private List<byte> _receivedBytes = new List<byte>();
 
-        public NoProtocol()
+        public NoProtocol(bool isByteView)
         {
-            ProtocolName = "Без протокола";
+            _isByteView = isByteView;
+
+            if (isByteView)
+            {
+                ProtocolName = "Без протокола (отображаются байты)";
+            }
+
+            else
+            {
+                ProtocolName = "Без протокола (отображается строка)";
+            }
         }
 
         public override void Init(NetworkStream Client, Encoding GlobalEncoding)
@@ -32,19 +41,29 @@ namespace EchoServer.Protocols
                 do
                 {
                     NumberOfReceivedBytes = Client.Read(ReceiveBuffer, 0, ReceiveBuffer.Length);
-                    MessageBuilder.Append(GlobalEncoding.GetString(ReceiveBuffer, 0, NumberOfReceivedBytes));
+
+                    if (NumberOfReceivedBytes == 0)
+                    {
+                        throw new ClientDisconnectException();
+                    }
+
+                    _receivedBytes.AddRange(ReceiveBuffer.Take(NumberOfReceivedBytes));
                 }
                 while (Client.DataAvailable);
 
-                MessageFromClient = MessageBuilder.ToString();
+                string message = _isByteView ?
+                    string.Join(" ", _receivedBytes.Select(x => x.ToString("X2"))) :
+                    GlobalEncoding.GetString(ReceiveBuffer, 0, NumberOfReceivedBytes);
 
-                if (MessageFromClient == String.Empty)
+                Console.WriteLine(message);
+
+                for (int i = 0; i < ReceiveBuffer.Length; i++)
                 {
-                    throw new ClientDisconnectException();
+                    ReceiveBuffer[i] = 0;
                 }
             }
 
-            // Исключение из за отключения клиента обрабатывается выше по стеку
+            // Исключение из-за отключения клиента обрабатывается выше по стеку
             catch (ClientDisconnectException)
             {
                 throw new ClientDisconnectException();
@@ -60,18 +79,9 @@ namespace EchoServer.Protocols
         {
             try
             {
-                Console.WriteLine(MessageFromClient);
+                Client.Write(_receivedBytes.ToArray(), 0, _receivedBytes.Count());
 
-                byte[] MessageToClient = GlobalEncoding.GetBytes(MessageBuilder.ToString());
-
-                Client.Write(MessageToClient, 0, MessageToClient.Length);
-
-                for (int i = 0; i < NumberOfReceivedBytes; i++)
-                {
-                    ReceiveBuffer[i] = 0;
-                }
-
-                MessageBuilder.Clear();
+                _receivedBytes.Clear();
             }
 
             catch (Exception error)
