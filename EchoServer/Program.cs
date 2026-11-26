@@ -130,7 +130,7 @@ namespace EchoServer
                 "1 - Без протокола (отображаются байты)\n" +
                 "2 - Modbus TCP\n" +
                 "3 - Цикличная передача\n" +
-                "4 - Modbus TCP тест режима мониторинга"
+                "4 - Modbus TCP тест режима мониторинга\n"
                 );
 
             ConsoleKeyInfo PressedKey;
