@@ -129,7 +129,8 @@ namespace EchoServer
                 "0 - Без протокола (отображается строка)\n" +
                 "1 - Без протокола (отображаются байты)\n" +
                 "2 - Modbus TCP\n" +
-                "3 - Цикличная передача\n"
+                "3 - Цикличная передача\n" +
+                "4 - Modbus TCP тест режима мониторинга"
                 );
 
             ConsoleKeyInfo PressedKey;
@@ -186,6 +187,13 @@ namespace EchoServer
 
                     Console.WriteLine("\n");
 
+                    break;
+                }
+                
+                else if (PressedKey.Key == ConsoleKey.D4 || PressedKey.Key == ConsoleKey.NumPad4)
+                {
+                    SelectedProtocol = new ModbusMonitoring();
+                    Console.WriteLine("\n");
                     break;
                 }
 

@@ -48,6 +48,7 @@
     <Compile Include="Protocols\CycleTransmit.cs" />
     <Compile Include="Protocols\IEcho.cs" />
     <Compile Include="Protocols\Modbus.cs" />
+    <Compile Include="Protocols\ModbusMonitoring.cs" />
     <Compile Include="Protocols\NoProtocol.cs" />
     <Compile Include="Protocols\Protocol.cs" />
   </ItemGroup>
